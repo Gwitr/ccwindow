@@ -6,9 +6,10 @@ Screen:abstractMethod "height"
 Screen:abstractMethod "normalizeEvent"
 Screen:abstractMethod "optimizedDims"
 Screen:abstractMethod "optimizeImage"
-Screen:abstractMethod "pixelBlitOptimized"
-Screen:abstractMethod "pixelDrawLine"
-Screen:abstractMethod "pixelFillRect"
+Screen:abstractMethod "blitOptimized"
+Screen:abstractMethod "drawLine"
+Screen:abstractMethod "fillRect"
+Screen:abstractMethod "plotPixel"
 Screen:abstractMethod "setColorMap"
 
 return {Screen=Screen}

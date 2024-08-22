@@ -41,7 +41,7 @@ function Point:__div(other)
 end
 
 local function rangeOverlap(x1, x2, y1, y2)
-  if not (x1 <= y2 and y1 <= x2) then return false end
+  if x1 > y2 or y1 > x2 then return false end
   local omin = math.max(x1, y1)
   local omax = math.min(x2, y2)
   if omin > omax then return true, omax, omin end
@@ -150,7 +150,7 @@ function Display:initialize(screen)
   self.screen = screen
   self.root = Window(self, nil, {0, 0, screen:width() - 2, screen:height() - 2}, function(event, ...)
     if event == "redraw"
-      then self.screen.pixelFillRect(..., 15)
+      then self.screen:fillRect(..., 15)
     end
   end, false)
   self.root.isFocused = true
@@ -206,7 +206,9 @@ end
 
 function Display:pullEvent()
   function normArg(wnd, arg)
-    if type(wnd) == "table" and wnd.class == Point then return wnd:pointToLocal(arg) end
+    if type(wnd) == "table" and wnd.class == Point then
+      return wnd:pointToLocal(arg)
+    end
     return arg
   end
   local event = {self.screen:normalizeEvent(os.pullEvent())}
@@ -237,12 +239,12 @@ function BoxedPainter:initialize(screen, offset, rect)
   self.rect = Rectangle(rect)
 end
 
-function BoxedPainter:pixelBlitOptimized(optimized, pos, region)
+function BoxedPainter:blitOptimized(optimized, pos, region)
   local imgsize = self.screen:optimizedDims(optimized)
   local pos = Point(pos) + self.offset
   local region
   if region == nil then
-    region = Rectangle{{0, 0}, imgsize}
+    region = Rectangle{0, 0, imgsize}
   else
     region = region.copy()
   end
@@ -262,10 +264,10 @@ function BoxedPainter:pixelBlitOptimized(optimized, pos, region)
     region.br.y = self.rect.br.y - pos.y
   end
 
-  self.screen:pixelBlitOptimized(optimized, pos, region)
+  self.screen:blitOptimized(optimized, pos, region)
 end
 
-function BoxedPainter:pixelDrawLine(sp, ep, color)
+function BoxedPainter:drawLine(sp, ep, color)
   local function norm(x, d)
     if x ~= x or x == math.huge or x == -math.huge then return d end
     return x
@@ -292,8 +294,6 @@ function BoxedPainter:pixelDrawLine(sp, ep, color)
     if boundRect:checkPointOverlap(v) then table.insert(intersect_points, v) end
   end
   if #intersect_points == 0 then return end
-  local fuck = "possible:"
-  for _, v in ipairs(intersect_points) do fuck = fuck .. " " .. tostring(v) end
 
   if not boundRect:checkPointOverlap(sp) then
     sp = utils.minf(intersect_points, function(v) return (v-sp):mag() end)
@@ -302,13 +302,13 @@ function BoxedPainter:pixelDrawLine(sp, ep, color)
     ep = utils.minf(intersect_points, function(v) return (v-ep):mag() end)
   end
 
-  self.screen:pixelDrawLine(sp, ep, color)
+  self.screen:drawLine(sp, ep, color)
 end
 
-function BoxedPainter:pixelFillRect(rect, color)
+function BoxedPainter:fillRect(rect, color)
   rect = Rectangle(rect)
   local overlap = self.rect:overlapArea{rect.tl + self.offset, rect.br + self.offset}
-  if overlap ~= nil then self.screen:pixelFillRect(overlap, color) end
+  if overlap ~= nil then self.screen:fillRect(overlap, color) end
 end
 
 Window = utils.Class()
@@ -324,7 +324,6 @@ function Window:initialize(display, parent, rect, wndFunc, focus)
   else
     self.colormap = self.parent.colormap
   end
---  print("colormap:", self.colormap)
   self.isFocused = false
   if parent ~= nil then table.insert(parent.windows, self) end
   if focus then self:focus() end

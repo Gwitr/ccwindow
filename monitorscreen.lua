@@ -21,7 +21,8 @@ local COLORIDS = {
 function MonitorScreen:setColorMap(colormap)
   for i=1,16 do
     self.monitor.setPaletteColor(COLORIDS[i],
-      table.unpack(utils.map(colormap[i], function(v) return v/255 end)))
+      table.unpack(utils.map(colormap[i], function(v)
+        return v/255 end)))
   end
 end
 
@@ -61,7 +62,7 @@ function MonitorScreen:optimizeImage(image, width)
   return {huh=huh, w=width, h=#image*2/width}
 end
 
-function MonitorScreen:pixelBlitOptimized(optimized, pos, region)
+function MonitorScreen:blitOptimized(optimized, pos, region)
   region = Rectangle(region or {0, 0, optimized.w, optimized.h})
 
   local sx, lx = region.tl.x, region:w()
@@ -74,16 +75,16 @@ function MonitorScreen:pixelBlitOptimized(optimized, pos, region)
   end
 end
 
-function MonitorScreen:pixelPlot(loc, color)
-  self:pixelFillRect(Rectangle{loc, loc}, color)
+function MonitorScreen:plotPixel(loc, color)
+  self:fillRect(Rectangle{loc, loc}, color)
 end
 
-function MonitorScreen:pixelDrawLine(sp, ep, color)
+function MonitorScreen:drawLine(sp, ep, color)
   if sp.y == ep.y or sp.x == ep.x then
     if sp.x > ep.x or sp.y > ep.y then
-      return self:pixelFillRect(Rectangle{ep, sp}, color)
+      return self:fillRect(Rectangle{ep, sp}, color)
     end
-    return self:pixelFillRect(Rectangle{sp, ep}, color)
+    return self:fillRect(Rectangle{sp, ep}, color)
   end
 
   -- TOOD: fixme this is LAZYYY like yeah it "works" but come on
@@ -92,7 +93,7 @@ function MonitorScreen:pixelDrawLine(sp, ep, color)
   dvec = dvec / itercnt
   local pos = sp:copy() * 10000
   for i=1,itercnt do
-    self:pixelPlot(pos / 10000, color)
+    self:plotPixel(pos / 10000, color)
     pos = pos + dvec
   end
 end
@@ -104,7 +105,7 @@ function MonitorScreen:flushPixelBuffer(x1, x2, y)
     self.pixelbuffer[y-y%2+2]:sub(1+x1, 1+x2))
 end
 
-function MonitorScreen:pixelFillRect(rect, color)
+function MonitorScreen:fillRect(rect, color)
   for y=rect.tl.y,rect.br.y do
     self.pixelbuffer[1+y] =
       self.pixelbuffer[1+y]:sub(1,rect.tl.x) ..
